@@ -3,6 +3,7 @@ const session = require('express-session');
 const path = require('path');
 const bcrypt = require('bcrypt');
 const db = require('../database/db');
+
 const app = express();
 const PORT = 3000;
 
@@ -10,6 +11,7 @@ app.use(express.static(path.join(__dirname, '../public')));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(session({ secret: 'secret', resave: false, saveUninitialized: false }));
+
 app.get('/', (req, res) => res.redirect('/register'));
 
 app.get('/register', (req, res) => {
@@ -65,12 +67,10 @@ app.get('/dashboard', (req, res) => {
     res.sendFile(path.join(__dirname, '../public', 'dashboard.html'));
 });
 
-
 app.get('/new-order', (req, res) => {
     if (!req.session.user) return res.redirect('/login');
     res.sendFile(path.join(__dirname, '../public', 'new-order.html'));
 });
-
 
 app.post('/api/orders', (req, res) => {
     if (!req.session.user) return res.json({ success: false, error: 'Не авторизован' });
@@ -113,6 +113,44 @@ app.get('/admin', (req, res) => {
     res.sendFile(path.join(__dirname, '../public', 'admin.html'));
 });
 
+app.get('/api/all-orders', (req, res) => {
+    if (!req.session.user || req.session.user.role !== 'admin') {
+        return res.status(403).json({ error: 'Доступ запрещен' });
+    }
+    
+    const sql = `
+        SELECT orders.*, users.full_name, users.phone, users.email 
+        FROM orders 
+        JOIN users ON orders.user_id = users.id 
+        ORDER BY orders.created_at DESC
+    `;
+    
+    db.all(sql, [], (err, orders) => {
+        if (err) {
+            return res.json({ success: false, error: err.message });
+        }
+        res.json({ success: true, orders: orders });
+    });
+});
+
+app.post('/api/update-order-status', (req, res) => {
+    if (!req.session.user || req.session.user.role !== 'admin') {
+        return res.status(403).json({ error: 'Доступ запрещен' });
+    }
+    
+    const { order_id, status, cancel_reason } = req.body;
+    
+    if (status === 'отменено' && !cancel_reason) {
+        return res.json({ success: false, error: 'Укажите причину отмены' });
+    }
+    
+    db.run(`UPDATE orders SET status = ?, cancel_reason = ? WHERE id = ?`,
+        [status, status === 'отменено' ? cancel_reason : null, order_id],
+        function(err) {
+            if (err) return res.json({ success: false, error: err.message });
+            res.json({ success: true });
+        });
+});
 
 app.get('/logout', (req, res) => {
     req.session.destroy();
@@ -121,7 +159,7 @@ app.get('/logout', (req, res) => {
 
 app.listen(PORT, () => {
     console.log(` Сервер запущен: http://localhost:${PORT}`);
-    console.log(` Регистрация: http://localhost:${PORT}/register`);
+    console.log(`Регистрация: http://localhost:${PORT}/register`);
     console.log(` Вход: http://localhost:${PORT}/login`);
     console.log(` Админ: adminka / password`);
 });
