@@ -63,3 +63,4 @@ function showSuccess(message) {
     successDiv.textContent = message;
     successDiv.style.display = 'block';
 }
+
