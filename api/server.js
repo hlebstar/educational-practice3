@@ -90,13 +90,19 @@ app.post('/api/orders', (req, res) => {
 });
 
 app.get('/api/my-orders', (req, res) => {
-    if (!req.session.user) return res.json({ success: false, error: 'Не авторизован' });
+    if (!req.session.user) {
+        return res.json({ success: false, error: 'Не авторизован' });
+    }
+    
+    const userId = req.session.user.id;
     
     db.all('SELECT * FROM orders WHERE user_id = ? ORDER BY created_at DESC', 
-        [req.session.user.id], 
+        [userId], 
         (err, orders) => {
-            if (err) return res.json({ success: false, error: 'Ошибка' });
-            res.json({ success: true, orders });
+            if (err) {
+                return res.json({ success: false, error: err.message });
+            }
+            res.json({ success: true, orders: orders });
         });
 });
 

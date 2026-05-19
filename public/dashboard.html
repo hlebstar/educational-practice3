@@ -3,38 +3,111 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Личный кабинет | Мой Не Сам</title>
-    <link rel="stylesheet" href="css/dashboard.css">
+    <title>Мои заявки</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: Arial, sans-serif;
+            background: #e8f5e9;
+            padding: 20px;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .header {
+            background: white;
+            border-radius: 15px;
+            padding: 15px 20px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        h1 {
+            color: #2e7d32;
+            font-size: 22px;
+        }
+        .btn {
+            padding: 8px 16px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-size: 14px;
+            border: none;
+            cursor: pointer;
+            display: inline-block;
+        }
+        .btn-green {
+            background: #4caf50;
+            color: white;
+        }
+        .btn-red {
+            background: #f44336;
+            color: white;
+            margin-left: 10px;
+        }
+        .order-card {
+            background: white;
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-left: 4px solid #4caf50;
+        }
+        .order-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+        .order-id {
+            font-weight: bold;
+            color: #2e7d32;
+        }
+        .status {
+            padding: 3px 10px;
+            border-radius: 15px;
+            font-size: 12px;
+        }
+        .status-new { background: #fff3e0; color: #e65100; }
+        .status-work { background: #e3f2fd; color: #0d47a1; }
+        .status-done { background: #e8f5e9; color: #1b5e20; }
+        .status-canceled { background: #ffebee; color: #c62828; }
+        .order-info p {
+            margin: 5px 0;
+            font-size: 14px;
+        }
+        .empty {
+            text-align: center;
+            padding: 40px;
+            background: white;
+            border-radius: 15px;
+            color: #999;
+        }
+        .error {
+            background: #ffebee;
+            color: #c62828;
+            padding: 15px;
+            border-radius: 15px;
+            text-align: center;
+        }
+    </style>
 </head>
-
-<style>
-
-
-    
-</style>
-
 <body>
     <div class="container">
         <div class="header">
-            <h1>портал клининговых услуг</h1>
+            <h1> Мои заявки</h1>
+            <div>
+                <a href="/new-order" class="btn btn-green">Новая</a>
+                <a href="/logout" class="btn btn-red">Выйти</a>
+            </div>
         </div>
-
-        <div id="userInfo" class="user-card">
-            <p>Вы авторизованы как: <strong id="userRole"></strong></p>
-        </div>
-
-        <div class="menu">
-            <button id="newOrderBtn" class="btn btn-primary"> Новая заявка</button>
-            <button id="myOrdersBtn" class="btn btn-secondary"> Мои заявки</button>
-            <button id="logoutBtn" class="btn btn-danger"> Выйти</button>
-        </div>
-
-        <div id="ordersSection" style="display: none;">
-            <h3>История заявок</h3>
-            <div id="ordersList"></div>
-        </div>
+        <div id="ordersContainer">Загрузка...</div>
     </div>
 
-    <script src="js/dashboard.js"></script>
+   <script src="/js/dashboard.js"></script>
 </body>
 </html>
