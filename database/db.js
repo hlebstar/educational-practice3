@@ -1,5 +1,6 @@
 const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
+const bcrypt = require('bcrypt');
 
 const dbPath = path.join(__dirname, 'database.db');
 const db = new sqlite3.Database(dbPath);
@@ -34,8 +35,7 @@ db.serialize(() => {
         )
     `);
 
-    const bcrypt = require('bcrypt');
-    const adminPassword = bcrypt.hashSync('password', 10);
+    const adminPassword = bcrypt.hashSync('password', 10);;
     
     db.run(
         `INSERT OR IGNORE INTO users (login, password, full_name, phone, email, role) 
