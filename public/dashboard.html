@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Личный кабинет | Мой Не Сам</title>
+    <link rel="stylesheet" href="css/dashboard.css">
+</head>
+
+<style>
+
+
+    
+</style>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>портал клининговых услуг</h1>
+        </div>
+
+        <div id="userInfo" class="user-card">
+            <p>Вы авторизованы как: <strong id="userRole"></strong></p>
+        </div>
+
+        <div class="menu">
+            <button id="newOrderBtn" class="btn btn-primary"> Новая заявка</button>
+            <button id="myOrdersBtn" class="btn btn-secondary"> Мои заявки</button>
+            <button id="logoutBtn" class="btn btn-danger"> Выйти</button>
+        </div>
+
+        <div id="ordersSection" style="display: none;">
+            <h3>История заявок</h3>
+            <div id="ordersList"></div>
+        </div>
+    </div>
+
+    <script src="js/dashboard.js"></script>
+</body>
+</html>

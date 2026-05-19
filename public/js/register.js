@@ -19,7 +19,7 @@ document.getElementById('registerForm').addEventListener('submit', async (e) => 
         const result = await response.json();
 
         if (result.success) {
-            document.getElementById('success').textContent = 'Регистрация успешна!';
+            document.getElementById('success').textContent = 'Регистрация успешна! Перенаправление...';
             document.getElementById('success').style.display = 'block';
             document.getElementById('error').style.display = 'none';
             setTimeout(() => window.location.href = '/login', 1500);
@@ -28,7 +28,7 @@ document.getElementById('registerForm').addEventListener('submit', async (e) => 
             document.getElementById('error').style.display = 'block';
             document.getElementById('success').style.display = 'none';
         }
-    } catch {
+    } catch (error) {
         document.getElementById('error').textContent = 'Ошибка соединения с сервером';
         document.getElementById('error').style.display = 'block';
     }

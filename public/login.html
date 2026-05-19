@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Вход | Мой Не Сам</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Вход в систему</h1>
+        <p>Портал клининговых услуг «Мой Не Сам»</p>
+
+        <div id="error" class="error" style="display: none; color: red; margin-bottom: 15px;"></div>
+
+        <form id="loginForm">
+            <label>Логин:</label>
+            <input type="text" id="login" required>
+
+            <label>Пароль:</label>
+            <input type="password" id="password" required>
+
+            <button type="submit">Войти</button>
+        </form>
+
+        <p>Нет аккаунта? <a href="/register">Зарегистрироваться</a></p>
+    </div>
+
+    <script src="/js/login.js"></script>
+</body>
+</html>
