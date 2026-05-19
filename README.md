@@ -33,7 +33,7 @@
 
 **2. Скачайте проект**
 
-git clone https://github.com/ваш-аккаунт/modulpodgotovka.git
+git clone https://github.com/hlebstar/modulpodgotovka.git
 cd modulpodgotovka
 
 **3. Установите зависимости**
