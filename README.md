@@ -37,7 +37,6 @@ git clone https://github.com/hlebstar/modulpodgotovka.git
 cd modulpodgotovka
 
 **3. Установите зависимости**
-
 cd api
 npm install
 
