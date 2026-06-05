@@ -7,22 +7,26 @@ const db = require('../database/db');
 const app = express();
 const PORT = 3000;
 
-app.use(express.static(path.join(__dirname, '../public')));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(session({ secret: 'secret', resave: false, saveUninitialized: false }));
 
-app.get('/', (req, res) => res.redirect('/register'));
-
-app.get('/register', (req, res) => {
-    res.sendFile(path.join(__dirname, '../public', 'register.html'));
+app.use((req, res, next) => {
+    res.header('Access-Control-Allow-Origin', 'http://localhost:5173');
+    res.header('Access-Control-Allow-Credentials', 'true');
+    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE');
+    res.header('Access-Control-Allow-Headers', 'Content-Type');
+    if (req.method === 'OPTIONS') {
+        return res.sendStatus(200);
+    }
+    next();
 });
 
 app.post('/api/register', async (req, res) => {
     const { login, password, full_name, phone, email } = req.body;
     
     if (!login || !password || !full_name || !phone || !email) {
-        return res.json({ success: false, error: 'Все поля обязательны' });
+        return res.status(400).json({ error: 'Все поля обязательны' });
     }
     
     try {
@@ -31,95 +35,106 @@ app.post('/api/register', async (req, res) => {
             [login, hash, full_name, phone, email],
             function(err) {
                 if (err) {
-                    return res.json({ success: false, error: 'Логин занят' });
+                    return res.status(400).json({ error: 'Логин занят' });
                 }
-                res.json({ success: true });
+                res.json({ message: 'OK' });
             });
     } catch {
-        res.json({ success: false, error: 'Ошибка сервера' });
+        res.status(500).json({ error: 'Ошибка сервера' });
     }
-});
-
-app.get('/login', (req, res) => {
-    res.sendFile(path.join(__dirname, '../public', 'login.html'));
 });
 
 app.post('/api/login', (req, res) => {
     const { login, password } = req.body;
     
+    console.log('Login attempt:', login);
+    
+    if (!login || !password) {
+        return res.status(400).json({ error: 'Логин и пароль обязательны' });
+    }
+    
     db.get('SELECT * FROM users WHERE login = ?', [login], async (err, user) => {
-        if (err || !user) {
-            return res.json({ success: false, error: 'Неверный логин или пароль' });
+        if (err) {
+            console.error('DB error:', err);
+            return res.status(500).json({ error: 'Ошибка сервера' });
+        }
+        
+        if (!user) {
+            console.log('User not found:', login);
+            return res.status(401).json({ error: 'Неверный логин или пароль' });
         }
         
         const valid = await bcrypt.compare(password, user.password);
         if (!valid) {
-            return res.json({ success: false, error: 'Неверный логин или пароль' });
+            console.log('Invalid password for:', login);
+            return res.status(401).json({ error: 'Неверный логин или пароль' });
         }
         
-        req.session.user = user;
-        res.json({ success: true, role: user.role });
+        req.session.user = {
+            id: user.id,
+            login: user.login,
+            full_name: user.full_name,
+            role: user.role
+        };
+        
+        console.log('Login success:', login);
+        res.json({ user: req.session.user });
     });
 });
 
-app.get('/dashboard', (req, res) => {
-    if (!req.session.user) return res.redirect('/login');
-    res.sendFile(path.join(__dirname, '../public', 'dashboard.html'));
+app.get('/api/me', (req, res) => {
+    if (!req.session.user) {
+        return res.status(401).json({ error: 'Нет сессии' });
+    }
+    res.json(req.session.user);
 });
 
-app.get('/new-order', (req, res) => {
-    if (!req.session.user) return res.redirect('/login');
-    res.sendFile(path.join(__dirname, '../public', 'new-order.html'));
+app.post('/api/logout', (req, res) => {
+    req.session.destroy();
+    res.json({ message: 'OK' });
+});
+
+app.get('/api/orders', (req, res) => {
+    if (!req.session.user) {
+        return res.status(401).json({ error: 'Не авторизован' });
+    }
+    
+    db.all('SELECT * FROM orders WHERE user_id = ? ORDER BY created_at DESC', 
+        [req.session.user.id], 
+        (err, orders) => {
+            if (err) {
+                return res.status(500).json({ error: err.message });
+            }
+            res.json(orders || []);
+        });
 });
 
 app.post('/api/orders', (req, res) => {
-    if (!req.session.user) return res.json({ success: false, error: 'Не авторизован' });
+    if (!req.session.user) {
+        return res.status(401).json({ error: 'Не авторизован' });
+    }
     
-    const { address, contact, service_type, payment_type, desired_date, desired_time } = req.body;
+    const { address, phone, service, payment, date, time } = req.body;
     const user_id = req.session.user.id;
     
     db.run(`INSERT INTO orders (user_id, address, contact, service_type, payment_type, desired_date, desired_time)
             VALUES (?, ?, ?, ?, ?, ?, ?)`,
-        [user_id, address, contact, service_type, payment_type, desired_date, desired_time],
+        [user_id, address, phone, service, payment, date, time],
         function(err) {
             if (err) {
-                return res.json({ success: false, error: 'Ошибка при создании заявки' });
+                return res.status(500).json({ error: err.message });
             }
-            res.json({ success: true, order_id: this.lastID });
+            res.json({ id: this.lastID });
         });
 });
 
-app.get('/api/my-orders', (req, res) => {
-    if (!req.session.user) {
-        return res.json({ success: false, error: 'Не авторизован' });
-    }
-    
-    const userId = req.session.user.id;
-    
-    db.all('SELECT * FROM orders WHERE user_id = ? ORDER BY created_at DESC', 
-        [userId], 
-        (err, orders) => {
-            if (err) {
-                return res.json({ success: false, error: err.message });
-            }
-            res.json({ success: true, orders: orders });
-        });
-});
-
-app.get('/admin', (req, res) => {
-    if (!req.session.user || req.session.user.role !== 'admin') {
-        return res.redirect('/login');
-    }
-    res.sendFile(path.join(__dirname, '../public', 'admin.html'));
-});
-
-app.get('/api/all-orders', (req, res) => {
+app.get('/api/admin/orders', (req, res) => {
     if (!req.session.user || req.session.user.role !== 'admin') {
         return res.status(403).json({ error: 'Доступ запрещен' });
     }
     
     const sql = `
-        SELECT orders.*, users.full_name, users.phone, users.email 
+        SELECT orders.*, users.full_name as name, users.phone, users.email 
         FROM orders 
         JOIN users ON orders.user_id = users.id 
         ORDER BY orders.created_at DESC
@@ -127,39 +142,36 @@ app.get('/api/all-orders', (req, res) => {
     
     db.all(sql, [], (err, orders) => {
         if (err) {
-            return res.json({ success: false, error: err.message });
+            return res.status(500).json({ error: err.message });
         }
-        res.json({ success: true, orders: orders });
+        res.json(orders || []);
     });
 });
 
-app.post('/api/update-order-status', (req, res) => {
+app.put('/api/admin/orders/:id', (req, res) => {
     if (!req.session.user || req.session.user.role !== 'admin') {
         return res.status(403).json({ error: 'Доступ запрещен' });
     }
     
-    const { order_id, status, cancel_reason } = req.body;
+    const { id } = req.params;
+    const { status, reason } = req.body;
     
-    if (status === 'отменено' && !cancel_reason) {
-        return res.json({ success: false, error: 'Укажите причину отмены' });
+    if (status === 'canceled' && !reason) {
+        return res.status(400).json({ error: 'Укажите причину отмены' });
     }
     
-    db.run(`UPDATE orders SET status = ?, cancel_reason = ? WHERE id = ?`,
-        [status, status === 'отменено' ? cancel_reason : null, order_id],
-        function(err) {
-            if (err) return res.json({ success: false, error: err.message });
-            res.json({ success: true });
-        });
-});
-
-app.get('/logout', (req, res) => {
-    req.session.destroy();
-    res.redirect('/login');
+    const sql = status === 'canceled'
+        ? 'UPDATE orders SET status = ?, cancel_reason = ? WHERE id = ?'
+        : 'UPDATE orders SET status = ? WHERE id = ?';
+    
+    const params = status === 'canceled' ? [status, reason, id] : [status, id];
+    
+    db.run(sql, params, function(err) {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ message: 'OK' });
+    });
 });
 
 app.listen(PORT, () => {
-    console.log(` Сервер запущен: http://localhost:${PORT}`);
-    console.log(`Регистрация: http://localhost:${PORT}/register`);
-    console.log(` Вход: http://localhost:${PORT}/login`);
-    console.log(` Админ: adminka / password`);
+    console.log(`  сервер: http://localhost:${PORT}`);
 });
